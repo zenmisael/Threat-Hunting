@@ -34,7 +34,7 @@ sudo /usr/local/bin/borg --scan --verbose
   ├── baseline_hash.json
   └── reports/
 ```
-## AUTOMATE
+## Automate
 - Cron Job
 ```bash
 crontab -e
