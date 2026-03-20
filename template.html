@@ -252,6 +252,31 @@ th, td {
 </table>
 </div>
 
+<!-- ================= TIMELINE ================= -->
+<h2>Command Timeline</h2>
+<div class="tb-list">
+<table>
+<thead>
+<tr>
+<th>Time</th>
+<th>User</th>
+<th>Command</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+{{range .Timeline}}
+<tr>
+<td>{{.Time}}</td>
+<td>{{.User}}</td>
+<td>{{.Cmd}}</td>
+<td>{{.Source}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
+</div>
+
 <br/>
 <!-- ================= EVIDENCE ================= -->
 <h2>Evidence / Rule Explanation</h2>
