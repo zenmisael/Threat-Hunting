@@ -7,7 +7,7 @@ go build -o borg borg.go
 ```
 ## Copy to Target Machine
 ```bash
-scp borg root@target:/usr/local/bin/
+scp borg root@target:/opt/borg/
 ```
 ## Permissions
 ```bash
@@ -19,7 +19,7 @@ scp template.html root@target:/opt/borg/
 ```
 ## Run Scan
 ```bash
-sudo /usr/local/bin/borg --scan --verbose
+sudo /opt/borg/borg --scan --verbose
 ```
 ## Output Report
 ```bash
@@ -40,6 +40,6 @@ sudo /usr/local/bin/borg --scan --verbose
 crontab -e
 ```
 ```bash
-0 * * * * /usr/local/bin/borg --scan
+0 * * * * /opt/borg/borg --scan
 ```
 
