@@ -9,6 +9,10 @@ Host-Based EDR + Rootkit Detection + DFIR Tool (Single Binary)
 ```bash
 scp borg root@target:/usr/local/bin/
 ```
+## Permissions
+```bash
+chmod +x borg
+```
 ## Copy Template
 ```bash
 scp template.html root@target:/opt/borg/
@@ -30,3 +34,12 @@ sudo /usr/local/bin/borg --scan --verbose
   ├── baseline_hash.json
   └── reports/
 ```
+## AUTOMATE
+- Cron Job
+```bash
+crontab -e
+```
+```bash
+0 * * * * /usr/local/bin/borg --scan
+```
+
