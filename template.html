@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>{{.Sys.Hostname}}</title>
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font: 14px/1 "Pretendard","Malgun Gothic","Arial",sans-serif;
+  background:#FFFFFF;
+}
+
+.wrap { width: 990px; }
+
+.wrap h1 {
+  padding:10px 0;
+  border-bottom:4px solid #2C67C0;
+  color:#2F4F4F;
+}
+
+.inner {
+  padding:20px;
+  margin:30px;
+}
+
+h2 {
+  font-size:16px;
+  font-weight:700;
+  margin-bottom:20px;
+}
+
+table {
+  width:100%;
+  border-collapse:collapse;
+}
+
+th, td {
+  border:1px solid #C0D0DB;
+  padding:10px;
+}
+
+.tb-input th { background:#EFF2F9; }
+.tb-list th { background:#EFF2F9; text-align:center; }
+
+.txt-normality { color:#12B76A; }
+.txt-danger { color:#FB6514; }
+.txt-serious { color:#B42318; }
+
+.bedge-serious {
+  background:#B42318; color:white; padding:6px; text-align:center;
+}
+
+.bedge-danger {
+  background:#FB6514; color:white; padding:6px; text-align:center;
+}
+</style>
+</head>
+
+<body>
+<div class="wrap">
+<div class="inner">
+
+<!-- ================= TITTLE ================= -->
+<h1>KISI Cyber Security Threat Hunting Report</h1>
+<br\>
+
+<!-- ================= HEADER ================= -->
+<h1>{{.Sys.Hostname}}_{{.Sys.IP}}</h1>
+
+<!-- ================= GENERAL INFO ================= -->
+<h2>General Information</h2>
+<table class="tb-input">
+<tbody>
+<tr>
+<th>IP Address</th>
+<td>{{.Sys.IP}}</td>
+</tr>
+<tr>
+<th>Hostname</th>
+<td>{{.Sys.Hostname}}</td>
+</tr>
+<tr>
+<th>OS Information</th>
+<td>{{.Sys.OS}}</td>
+</tr>
+<tr>
+<th>Login Account</th>
+<td>{{.Sys.LoginUser}}</td>
+</tr>
+<tr>
+<th>Analysis Time</th>
+<td>{{.Now}}</td>
+</tr>
+<tr>
+<th>Time Zone</th>
+<td>{{.Sys.Timezone}}</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ================= HOST RISK ================= -->
+<h2>Host Risk Score</h2>
+<table>
+<tbody>
+<tr>
+<th>Risk Score</th>
+<td>{{.RiskScore}} / 100</td>
+</tr>
+<tr>
+<th>Risk Level</th>
+<td>
+{{if eq .RiskLevel "Critical"}}
+<span class="txt-serious">{{.RiskLevel}}</span>
+{{else if eq .RiskLevel "Warning"}}
+<span class="txt-danger">{{.RiskLevel}}</span>
+{{else}}
+<span class="txt-normality">{{.RiskLevel}}</span>
+{{end}}
+</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ================= ACCOUNT ================= -->
+<h2>Account Information</h2>
+<div class="tb-list">
+<table>
+<thead>
+<tr>
+<th>User</th>
+<th>UID</th>
+<th>GID</th>
+<th>Home Directory</th>
+<th>Shell</th>
+</tr>
+</thead>
+<tbody>
+{{range .Accounts}}
+<tr>
+<td>{{.User}}</td>
+<td>{{.UID}}</td>
+<td>{{.GID}}</td>
+<td>{{.Home}}</td>
+<td>{{.Shell}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
+</div>
+
+<!-- ================= DIAGNOSIS ================= -->
+<h2>Diagnosis Result</h2>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th class="txt-normality">Normal</th>
+<th class="txt-danger">Warning</th>
+<th class="txt-serious">Critical</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="bedge-serious">RESULT</span></td>
+<td>{{.Normal}}</td>
+<td>{{.WarningCount}}</td>
+<td>{{.CriticalCount}}</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ================= INCIDENT SUMMARY ================= -->
+<h2>Incident Summary</h2>
+<table>
+<tbody>
+<tr>
+<th>Total Findings</th>
+<td>{{.TotalFindings}}</td>
+</tr>
+<tr>
+<th>Critical Issues</th>
+<td class="txt-serious">{{.CriticalCount}}</td>
+</tr>
+<tr>
+<th>Warning Issues</th>
+<td class="txt-danger">{{.WarningCount}}</td>
+</tr>
+<tr>
+<th>Overall Risk</th>
+<td>
+{{if eq .RiskLevel "Critical"}}
+<span class="txt-serious">Immediate action required</span>
+{{else if eq .RiskLevel "Warning"}}
+<span class="txt-danger">Suspicious activity detected</span>
+{{else}}
+<span class="txt-normality">System appears clean</span>
+{{end}}
+</td>
+</tr>
+</tbody>
+</table>
+
+<!-- ================= CRITICAL ================= -->
+<h2>Detection Result : <span class="txt-serious">Critical</span></h2>
+<div class="tb-list">
+<table>
+<thead>
+<tr>
+<th>No</th>
+<th>Detection Name</th>
+<th>Description</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+{{range $i, $f := .Critical}}
+<tr>
+<td>{{$i}}</td>
+<td>{{$f.Name}}</td>
+<td>{{$f.Description}}</td>
+<td>{{$f.Detail}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
+</div>
+
+<!-- ================= WARNING ================= -->
+<h2>Detection Result : <span class="txt-danger">Warning</span></h2>
+<div class="tb-list">
+<table>
+<thead>
+<tr>
+<th>No</th>
+<th>Detection Name</th>
+<th>Description</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+{{range $i, $f := .Warning}}
+<tr>
+<td>{{$i}}</td>
+<td>{{$f.Name}}</td>
+<td>{{$f.Description}}</td>
+<td>{{$f.Detail}}</td>
+</tr>
+{{end}}
+</tbody>
+</table>
+</div>
+
+<br/>
+<!-- ================= EVIDENCE ================= -->
+<h2>Evidence / Rule Explanation</h2>
+<div>
+<p>All detections are mapped to MITRE ATT&CK techniques.</p>
+<p>Evidence includes process, memory, network, and log-based findings.</p>
+</div>
+<br/> 
+
+<!-- ================= SUPPORT ================= -->
+<h2>Support Section</h2>
+<div>
+<p>If any Warning or Critical findings are detected, incident response is recommended.</p>
+<p>Report incident: it@kisi.co.id</p>
+</div>
+
+</div>
+</div>
+</body>
+</html>

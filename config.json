@@ -1,0 +1,8 @@
+{
+  "scan_interval": 0,
+  "enable_yara": true,
+  "enable_integrity": true,
+  "enable_rootkit": true,
+  "enable_lynis": true,
+  "output_dir": "./reports"
+}
