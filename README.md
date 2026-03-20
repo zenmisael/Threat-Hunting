@@ -21,3 +21,12 @@ sudo /usr/local/bin/borg --scan --verbose
 ```bash
 ./reports/report.html
 ```
+## Directory Layout
+```bash
+/opt/borg/
+  ├── borg
+  ├── template.html
+  ├── config.json
+  ├── baseline_hash.json
+  └── reports/
+```
