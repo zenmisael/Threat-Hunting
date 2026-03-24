@@ -108,6 +108,30 @@ func isWhitelisted(path string) bool {
         return false
 }
 
+/* ================= MITRE MAPPING ================= */
+
+func getMitreTactic(id string) string {
+
+        switch id {
+        case "T1055":
+                return "Execution"
+        case "T1036":
+                return "Defense Evasion"
+        case "T1553":
+                return "Defense Evasion"
+        case "T1070":
+                return "Defense Evasion"
+        case "T1105":
+                return "Command and Control"
+        case "T1041":
+                return "Exfiltration"
+        case "T1027":
+                return "Defense Evasion"
+        default:
+                return "Unknown"
+        }
+}
+
 /* ================= BASELINE LEARNING ================= */
 
 type Baseline struct {
@@ -1137,9 +1161,14 @@ func runScan(cfg Config) {
 
 	os.MkdirAll(cfg.OutputDir, 0755)
 
-	tplBytes, _ := os.ReadFile("template.html")
-	t := template.Must(template.New("r").Parse(string(tplBytes)))
 
+    tplBytes, _ := os.ReadFile("template.html")
+
+        t := template.Must(
+        template.New("r").Funcs(template.FuncMap{
+                "tactic": getMitreTactic,
+        }).Parse(string(tplBytes)),
+    )
 	hostname := strings.ReplaceAll(sys["Hostname"], " ", "_")
 	timestamp := time.Now().Format("20060102")
 
