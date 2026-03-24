@@ -566,42 +566,125 @@ func detectInternetActivity() []Finding {
 
 func detectFileIntegrity() []Finding {
 
-	vlog("Checking file integrity (deep scan)")
+        vlog("Checking file integrity (deep scan)")
 
-	var findings []Finding
+        var findings []Finding
 
-	dirs := []string{"/bin", "/usr/bin", "/sbin", "/usr/sbin"}
+        baselinePath := "baseline_hash.json"
 
-	for _, dir := range dirs {
+        // ================= LOAD BASELINE =================
+        baseline := make(map[string]string)
 
-		files, err := os.ReadDir(dir)
-		if err != nil {
-			continue
-		}
+        if data, err := os.ReadFile(baselinePath); err == nil {
+                json.Unmarshal(data, &baseline)
+        }
 
-		for _, f := range files {
+        // ================= CURRENT STATE =================
+        current := make(map[string]string)
 
-			path := dir + "/" + f.Name()
+        dirs := []string{"/bin", "/usr/bin", "/sbin", "/usr/sbin"}
 
-			out := run("sha256sum " + path)
-			if out == "" {
-				continue
-			}
+        for _, dir := range dirs {
 
-			// simple anomaly check (example)
-			if strings.Contains(out, "000000") {
-				findings = append(findings, Finding{
-					Name:        "Suspicious Binary",
-					Severity:    "WARNING",
-					Description: "Possible tampered binary",
-					Detail:      path,
-					Mitre:       "T1553",
-				})
-			}
-		}
-	}
+                files, err := os.ReadDir(dir)
+                if err != nil {
+                        continue
+                }
 
-	return findings
+                for _, f := range files {
+
+                        path := dir + "/" + f.Name()
+
+                        // ================= SKIP NON-REGULAR FILE =================
+                        info, err := f.Info()
+                        if err != nil || !info.Mode().IsRegular() {
+                                continue
+                        }
+
+                        // ================= QUICK ELF CHECK =================
+                        file, err := os.Open(path)
+                        if err != nil {
+                                continue
+                        }
+
+                        header := make([]byte, 4)
+                        _, err = file.Read(header)
+                        file.Close()
+                        if err != nil {
+                                continue
+                        }
+
+                        // ELF magic: 0x7f 'E' 'L' 'F'
+                        if !(header[0] == 0x7f && header[1] == 'E' && header[2] == 'L' && header[3] == 'F') {
+                                continue
+                        }
+
+                        // ================= HASH =================
+                        out := run("sha256sum " + path)
+                        if out == "" {
+                                continue
+                        }
+
+                        parts := strings.Fields(out)
+                        if len(parts) < 1 {
+                                continue
+                        }
+
+                        hash := parts[0]
+                        current[path] = hash
+
+                        // ================= COMPARE =================
+                        if oldHash, ok := baseline[path]; ok {
+                                if oldHash != hash {
+                                        findings = append(findings, Finding{
+                                                Name:        "Binary Modified",
+                                                Severity:    "CRITICAL",
+                                                Description: "Binary hash mismatch detected",
+                                                Detail:      path,
+                                                Mitre:       "T1553",
+                                        })
+                                }
+                        } else if len(baseline) > 0 {
+                                // ================= NEW BINARY =================
+                                findings = append(findings, Finding{
+                                        Name:        "New Binary Detected",
+                                        Severity:    "WARNING",
+                                        Description: "Binary not present in baseline",
+                                        Detail:      path,
+                                        Mitre:       "T1036",
+                                })
+                        }
+                }
+        }
+
+        // ================= DELETED BINARIES =================
+        if len(baseline) > 0 {
+                for oldPath := range baseline {
+                        if _, ok := current[oldPath]; !ok {
+                                findings = append(findings, Finding{
+                                        Name:        "Binary Missing",
+                                        Severity:    "HIGH",
+                                        Description: "Baseline binary no longer exists",
+                                        Detail:      oldPath,
+                                        Mitre:       "T1070",
+                                })
+                        }
+                }
+        }
+
+        // ================= FIRST RUN: CREATE BASELINE =================
+        if len(baseline) == 0 {
+                vlog("[BASELINE] Creating binary baseline")
+
+                data, _ := json.MarshalIndent(current, "", "  ")
+                os.WriteFile(baselinePath, data, 0644)
+
+                vlog("[BASELINE] baseline_hash.json created")
+
+                return findings
+        }
+
+        return findings
 }
 
 /* ================= ROOTKIT ================= */
