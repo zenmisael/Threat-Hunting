@@ -4,5 +4,9 @@
   "enable_integrity": true,
   "enable_rootkit": true,
   "enable_lynis": true,
-  "output_dir": "./reports"
+  "output_dir": "./reports",
+  "whitelist_paths": [
+    "/home/borg/scripts/",
+    "/tmp/legit_tool"
+  ]
 }
