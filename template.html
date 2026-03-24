@@ -212,7 +212,8 @@ th, td {
 <th>Detection Name</th>
 <th>Description</th>
 <th>Detail</th>
-<th>MITRE</th>  
+<th>MITRE</th>
+<th>Tactic</th>  
 </tr>
 </thead>
 <tbody>
@@ -228,6 +229,17 @@ th, td {
 {{$f.Mitre}}
 </a>
 {{end}}
+</td>
+
+<td>
+{{if eq $f.Mitre "T1055"}}Execution
+{{else if eq $f.Mitre "T1036"}}Defense Evasion
+{{else if eq $f.Mitre "T1553"}}Defense Evasion
+{{else if eq $f.Mitre "T1070"}}Defense Evasion
+{{else if eq $f.Mitre "T1105"}}Command and Control
+{{else if eq $f.Mitre "T1041"}}Exfiltration
+{{else if eq $f.Mitre "T1027"}}Defense Evasion
+{{else}}Unknown{{end}}
 </td>
 </tr>
 {{end}}
@@ -246,6 +258,7 @@ th, td {
 <th>Description</th>
 <th>Detail</th>
 <th>MITRE</th> 
+<th>Tactic</th>
 </tr>
 </thead>
 <tbody>
@@ -261,6 +274,17 @@ th, td {
 {{$f.Mitre}}
 </a>
 {{end}}
+</td>
+
+<td>
+{{if eq $f.Mitre "T1055"}}Execution
+{{else if eq $f.Mitre "T1036"}}Defense Evasion
+{{else if eq $f.Mitre "T1553"}}Defense Evasion
+{{else if eq $f.Mitre "T1070"}}Defense Evasion
+{{else if eq $f.Mitre "T1105"}}Command and Control
+{{else if eq $f.Mitre "T1041"}}Exfiltration
+{{else if eq $f.Mitre "T1027"}}Defense Evasion
+{{else}}Unknown{{end}}
 </td>
 </tr>
 {{end}}
