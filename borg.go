@@ -69,6 +69,45 @@ func getIP() string {
 	return ""
 }
 
+/* ==============Whitelist-Feature=============== */
+
+func isWhitelisted(path string) bool {
+
+        data, err := os.ReadFile("config.json")
+        if err != nil {
+                return false
+        }
+
+        var cfg map[string]interface{}
+        if err := json.Unmarshal(data, &cfg); err != nil {
+                return false
+        }
+
+        raw, ok := cfg["whitelist_paths"]
+        if !ok {
+                return false
+        }
+
+        list, ok := raw.([]interface{})
+        if !ok {
+                return false
+        }
+
+        for _, v := range list {
+                p, ok := v.(string)
+                if !ok {
+                        continue
+                }
+
+                // exact match OR prefix (directory whitelist)
+                if path == p || strings.HasPrefix(path, p) {
+                        return true
+                }
+        }
+
+        return false
+}
+
 /* ================= BASELINE LEARNING ================= */
 
 type Baseline struct {
@@ -960,8 +999,12 @@ func detectRogueBinaries() []Finding {
 
         if d.IsDir() {
                 return nil
-        }
-
+		}
+	
+		if isWhitelisted(path) {
+        		return nil
+		}		
+			
         info, err := d.Info()
         if err != nil || !info.Mode().IsRegular() {
                 return nil
