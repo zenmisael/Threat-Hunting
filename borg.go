@@ -325,6 +325,93 @@ func detectReverseShells() []Finding {
 	return findings
 }
 
+/* ================= FILELESS / MEMORY SHELL DETECTION ================= */
+
+func detectFilelessShells() []Finding {
+
+	vlog("Detecting fileless / memory-only shells")
+
+	var findings []Finding
+
+	netstat := run("ss -tunp")
+	procs, _ := os.ReadDir("/proc")
+
+	for _, p := range procs {
+
+		if !isNumeric(p.Name()) {
+			continue
+		}
+
+		pid := p.Name()
+		cmd, exe := getProcessInfo(pid)
+
+		// read memory map
+		maps, err := os.ReadFile("/proc/" + pid + "/maps")
+		if err != nil {
+			continue
+		}
+
+		txt := string(maps)
+
+		// =========================
+		// CONDITIONS
+		// =========================
+
+		hasNetwork := strings.Contains(netstat, pid)
+
+		isShell :=
+			strings.Contains(cmd, "bash") ||
+				strings.Contains(cmd, "sh") ||
+				strings.Contains(cmd, "python")
+
+		inMemory :=
+			strings.Contains(txt, "(deleted)") ||
+				strings.Contains(txt, "/dev/shm") ||
+				strings.Contains(txt, "/tmp")
+
+		hasSocket :=
+			strings.Contains(cmd, "socket") ||
+				strings.Contains(cmd, "/dev/tcp") ||
+				strings.Contains(cmd, "connect")
+
+		// =========================
+		// STRICT DETECTION
+		// =========================
+
+		score := 0
+
+		if hasNetwork {
+			score++
+		}
+		if isShell {
+			score++
+		}
+		if inMemory {
+			score++
+		}
+		if hasSocket {
+			score++
+		}
+
+		// require strong correlation
+		if score >= 3 {
+
+			findings = append(findings, Finding{
+				Name:        "Fileless Reverse Shell",
+				Severity:    "CRITICAL",
+				Description: "Memory-only shell with network activity",
+				Detail: fmt.Sprintf(
+					"PID=%s CMD=%s EXE=%s SCORE=%d",
+					pid, cmd, exe, score,
+				),
+				Mitre: "T1059",
+			})
+		}
+	}
+
+	return findings
+}
+
 /* ================= INTERNET ================= */
 
 func detectInternetActivity() []Finding {
@@ -662,6 +749,7 @@ func runScan(cfg Config) {
 	findings = append(findings, aFind...)
 	findings = append(findings, detectMemory(history)...)
 	findings = append(findings, detectReverseShells()...)
+    findings = append(findings, detectFilelessShells()...)
 	findings = append(findings, detectInternetActivity()...)
 	findings = append(findings, detectFileIntegrity()...)
 	findings = append(findings, detectLDPreload()...)
