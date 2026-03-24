@@ -622,7 +622,7 @@ func detectAdvancedHooks() []Finding {
 		txt := string(maps)
 
 		// =========================
-		// ENTERPRISE SYSCALL HOOK DETECTION
+		// SYSCALL HOOK DETECTION
 		// =========================
 
 		libcDeleted := strings.Contains(txt, "libc") && strings.Contains(txt, "(deleted)")
