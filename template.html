@@ -231,17 +231,7 @@ th, td {
 {{end}}
 </td>
 
-<td>
-{{if eq $f.Mitre "T1055"}}Execution
-{{else if eq $f.Mitre "T1036"}}Defense Evasion
-{{else if eq $f.Mitre "T1553"}}Defense Evasion
-{{else if eq $f.Mitre "T1070"}}Defense Evasion
-{{else if eq $f.Mitre "T1105"}}Command and Control
-{{else if eq $f.Mitre "T1041"}}Exfiltration
-{{else if eq $f.Mitre "T1027"}}Defense Evasion
-{{else}}Unknown{{end}}
-</td>
-</tr>
+<td>{{tactic $f.Mitre}}</td></tr>
 {{end}}
 </tbody>
 </table>
@@ -276,17 +266,7 @@ th, td {
 {{end}}
 </td>
 
-<td>
-{{if eq $f.Mitre "T1055"}}Execution
-{{else if eq $f.Mitre "T1036"}}Defense Evasion
-{{else if eq $f.Mitre "T1553"}}Defense Evasion
-{{else if eq $f.Mitre "T1070"}}Defense Evasion
-{{else if eq $f.Mitre "T1105"}}Command and Control
-{{else if eq $f.Mitre "T1041"}}Exfiltration
-{{else if eq $f.Mitre "T1027"}}Defense Evasion
-{{else}}Unknown{{end}}
-</td>
-</tr>
+<td>{{tactic $f.Mitre}}</td></tr>
 {{end}}
 </tbody>
 </table>
