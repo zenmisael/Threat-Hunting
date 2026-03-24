@@ -68,6 +68,117 @@ func getIP() string {
 	return ""
 }
 
+/* ================= BASELINE LEARNING ================= */
+
+type Baseline struct {
+	Processes map[string]bool `json:"processes"`
+	Ports     map[string]bool `json:"ports"`
+}
+
+func loadBaseline() Baseline {
+
+	var b Baseline
+	b.Processes = make(map[string]bool)
+	b.Ports = make(map[string]bool)
+
+	data, err := os.ReadFile("baseline.json")
+	if err == nil {
+		json.Unmarshal(data, &b)
+	}
+
+	return b
+}
+
+func saveBaseline(b Baseline) {
+	data, _ := json.MarshalIndent(b, "", " ")
+	os.WriteFile("baseline.json", data, 0644)
+}
+
+func learnBaseline() Baseline {
+
+	vlog("Learning baseline")
+
+	b := loadBaseline()
+
+	// processes
+	procs, _ := os.ReadDir("/proc")
+	for _, p := range procs {
+
+		if !isNumeric(p.Name()) {
+			continue
+		}
+
+		_, exe := getProcessInfo(p.Name())
+		if exe != "" {
+			b.Processes[exe] = true
+		}
+	}
+
+	// ports
+	out := run("ss -tuln")
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, ":") {
+			b.Ports[line] = true
+		}
+	}
+
+	saveBaseline(b)
+	return b
+}
+
+func detectAnomaly(b Baseline) []Finding {
+
+	vlog("Detecting anomaly vs baseline")
+
+	var findings []Finding
+
+	// check processes
+	procs, _ := os.ReadDir("/proc")
+
+	for _, p := range procs {
+
+		if !isNumeric(p.Name()) {
+			continue
+		}
+
+		pid := p.Name()
+		cmd, exe := getProcessInfo(pid)
+
+		if exe == "" {
+			continue
+		}
+
+		if !b.Processes[exe] {
+
+			findings = append(findings, Finding{
+				Name:        "New Process Detected",
+				Severity:    "WARNING",
+				Description: "Process not in baseline",
+				Detail:      fmt.Sprintf("PID=%s CMD=%s EXE=%s", pid, cmd, exe),
+				Mitre:       "T1059",
+			})
+		}
+	}
+
+	// check ports
+	out := run("ss -tuln")
+	for _, line := range strings.Split(out, "\n") {
+
+		if strings.Contains(line, ":") && !b.Ports[line] {
+
+			findings = append(findings, Finding{
+				Name:        "New Network Port",
+				Severity:    "WARNING",
+				Description: "Port not in baseline",
+				Detail:      line,
+				Mitre:       "T1046",
+			})
+		}
+	}
+
+	return findings
+}
+
 /* ================= STRUCT ================= */
 
 type Finding struct {
@@ -694,6 +805,57 @@ func detectAdvancedHooks() []Finding {
 	return findings
 }
 
+/* ================= PROCESS TREE ================= */
+
+type ProcTree struct {
+	PID  string
+	PPID string
+	CMD  string
+	EXE  string
+}
+
+func buildProcessTree() []ProcTree {
+
+	vlog("Building process tree")
+
+	var tree []ProcTree
+
+	procs, _ := os.ReadDir("/proc")
+
+	for _, p := range procs {
+
+		if !isNumeric(p.Name()) {
+			continue
+		}
+
+		pid := p.Name()
+		cmd, exe := getProcessInfo(pid)
+
+		status, err := os.ReadFile("/proc/" + pid + "/status")
+		if err != nil {
+			continue
+		}
+
+		ppid := "0"
+
+		for _, line := range strings.Split(string(status), "\n") {
+			if strings.HasPrefix(line, "PPid:") {
+				ppid = strings.Fields(line)[1]
+				break
+			}
+		}
+
+		tree = append(tree, ProcTree{
+			PID:  pid,
+			PPID: ppid,
+			CMD:  cmd,
+			EXE:  exe,
+		})
+	}
+
+	return tree
+}
+
 /* ================= GROUP ================= */
 
 func groupFindings(f []Finding) ([]Finding, []Finding) {
@@ -739,7 +901,9 @@ func runScan(cfg Config) {
 
 	sys := collectSystem()
 	acc := collectAccounts()
-
+	baseline := learnBaseline()
+	tree := buildProcessTree()
+	
 	hFind, history, timeline := scanAllHistory()
 	aFind, _ := parseAuthLog()
 
@@ -750,6 +914,7 @@ func runScan(cfg Config) {
 	findings = append(findings, detectMemory(history)...)
 	findings = append(findings, detectReverseShells()...)
     findings = append(findings, detectFilelessShells()...)
+	findings = append(findings, detectAnomaly(baseline)...)	
 	findings = append(findings, detectInternetActivity()...)
 	findings = append(findings, detectFileIntegrity()...)
 	findings = append(findings, detectLDPreload()...)
@@ -764,6 +929,7 @@ func runScan(cfg Config) {
 		"Accounts":      acc,
 		"Critical":      crit,
 		"Warning":       warn,
+		"ProcessTree": tree,
 		"CriticalCount": len(crit),
 		"WarningCount":  len(warn),
 		"TotalFindings": len(findings),
