@@ -967,7 +967,12 @@ func detectRogueBinaries() []Finding {
                 return nil
         }
 
-        // check executable bit
+		if strings.Contains(path, "/.cache") ||
+   			strings.Contains(path, "/.config") {
+        		return nil
+		}
+			
+		// check executable bit
         if info.Mode()&0111 == 0 {
                 return nil
         }
