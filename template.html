@@ -212,6 +212,7 @@ th, td {
 <th>Detection Name</th>
 <th>Description</th>
 <th>Detail</th>
+<th>MITRE</th>  
 </tr>
 </thead>
 <tbody>
@@ -221,6 +222,13 @@ th, td {
 <td>{{$f.Name}}</td>
 <td>{{$f.Description}}</td>
 <td>{{$f.Detail}}</td>
+<td>
+{{if $f.Mitre}}
+<a href="https://attack.mitre.org/techniques/{{$f.Mitre}}/" target="_blank">
+{{$f.Mitre}}
+</a>
+{{end}}
+</td>
 </tr>
 {{end}}
 </tbody>
@@ -237,6 +245,7 @@ th, td {
 <th>Detection Name</th>
 <th>Description</th>
 <th>Detail</th>
+<th>MITRE</th> 
 </tr>
 </thead>
 <tbody>
@@ -246,6 +255,13 @@ th, td {
 <td>{{$f.Name}}</td>
 <td>{{$f.Description}}</td>
 <td>{{$f.Detail}}</td>
+<td>
+{{if $f.Mitre}}
+<a href="https://attack.mitre.org/techniques/{{$f.Mitre}}/" target="_blank">
+{{$f.Mitre}}
+</a>
+{{end}}
+</td>
 </tr>
 {{end}}
 </tbody>
