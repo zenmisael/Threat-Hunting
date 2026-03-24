@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"bufio"
 	"encoding/json"
 	"flag"
@@ -937,6 +938,69 @@ func buildProcessTree() []ProcTree {
 	}
 
 	return tree
+}
+
+// ================= ROGUE BINARY DETECTION =================
+
+func detectRogueBinaries() []Finding {
+
+        vlog("Detecting binaries outside standard directories")
+
+        var findings []Finding
+
+        dirs := []string{"/tmp", "/dev/shm", "/var/tmp", "/home"}
+
+        for _, dir := range dirs {
+
+        filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+
+        if err != nil {
+                return nil
+        }
+
+        if d.IsDir() {
+                return nil
+        }
+
+        info, err := d.Info()
+        if err != nil || !info.Mode().IsRegular() {
+                return nil
+        }
+
+        // check executable bit
+        if info.Mode()&0111 == 0 {
+                return nil
+        }
+
+        // quick ELF check
+        file, err := os.Open(path)
+        if err != nil {
+                return nil
+        }
+
+        header := make([]byte, 4)
+        _, err = file.Read(header)
+        file.Close()
+        if err != nil {
+                return nil
+        }
+
+        if header[0] == 0x7f && header[1] == 'E' && header[2] == 'L' && header[3] == 'F' {
+
+                findings = append(findings, Finding{
+                        Name:        "Rogue Binary Detected",
+                        Severity:    "CRITICAL",
+                        Description: "Executable found in non-standard directory",
+                        Detail:      path,
+                        Mitre:       "T1036",
+                })
+        }
+
+        return nil
+})
+        }
+
+        return findings
 }
 
 /* ================= GROUP ================= */
