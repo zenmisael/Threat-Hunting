@@ -3,7 +3,7 @@ Host-Based EDR + Rootkit Detection + DFIR Tool (Single Binary)
 
 ## Build Binary
 ```bash
-go build -o borg borg.go
+go build -o borg
 ```
 ## Copy to Target Machine
 ```bash
